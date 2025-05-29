@@ -131,7 +131,7 @@ fun sum_tree:: "nat tree \<Rightarrow> nat" where
 "sum_tree Tip = 0"
 | "sum_tree (Node t1 x t2) = x + sum_tree(t1) + sum_tree(t2)"
 
-theorem sum_tree_eq_sum_list [simp]: "sum_tree t = sum_list(contents t)"
+theorem sum_tree_eq_sum_list: "sum_tree t = sum_list(contents t)"
   apply(induction t)
    apply (auto)
   done
@@ -172,15 +172,91 @@ fun intersperse:: "'a \<Rightarrow> 'a list \<Rightarrow> 'a list" where
 theorem interperse_map: "map f (intersperse a xs) = intersperse (f a) (map f xs)"
   apply (induction xs rule: intersperse.induct)
   apply (auto)
+  done
+
+text\<open>Exercise 9: Write a tail-recursive variant of the add function on nat: itadd. Tail-recursive 
+means that in the recursive case, itadd needs to call itself directly: 
+itadd (Suc m) n = itadd... .Prove itadd m n = add m n.\<close>
+
+fun itadd:: "nat \<Rightarrow> nat \<Rightarrow> nat" where
+"itadd 0 n = n"
+| "itadd (Suc m) n = itadd m (Suc n)"
+
+lemma itadd_suc: "itadd m (Suc n) = add (Suc m) n"
+  apply (induction m arbitrary: n)
+   apply (auto)
+  done
+
+theorem itadd_equals_add: "itadd m n = add m n"
+  apply (induction m)
+   apply (auto simp add: itadd_suc)
+  done
+
+text\<open>Exercise 10: Define a datatype tree0 of binary tree skeletons which do not store any
+information, neither in the inner nodes nor in the leaves. Define a function nodes:: tree0 \<Rightarrow> nat
+that counts the number of all nodes (inner nodes and leaves in such a tree. Consider the following
+recursive function:
+
+fun explode:: "nat \<Rightarrow> tree0 \<Rightarrow> tree0" where
+"explode 0 t = t"
+| "explode (Suc n) t = explode n (Node t t)"
+
+Find an equation expressing the size of a tree after exploding it (nodes (explode n t)) as a
+function of nodes t and n. Prove your equation. You may use the usual arithmetic operators, 
+including the exponential operator "^". For example:  2^2=4.
+
+Hint: simplifying with the list of of theorems algebra_simps takes care of common algebraic pro-
+perties of algebraic operators.\<close>
+
+datatype tree0 = Tip
+  | Node "tree0" "tree0"
+
+fun nodes:: "tree0 \<Rightarrow> nat" where
+"nodes Tip = 1"
+| "nodes (Node t1 t2) = 1 + nodes t1 + nodes t2"
+
+fun explode:: "nat \<Rightarrow> tree0 \<Rightarrow> tree0" where
+"explode 0 t = t"
+| "explode (Suc n) t = explode n (Node t t)"
+
+thm algebra_simps
+
+theorem size_explosion: "nodes (explode n t) = 2^n * nodes t + 2^n - 1"
+  apply (induction n arbitrary: t)
+   apply (auto simp add: algebra_simps)
+  done
+
+text\<open>Exercise 11: Define arithmetic expressions in one variable over integers (type int) as a 
+datatype
+
+datatype exp = Var | Const int | Add exp exp | Mult exp exp
+
+Define a function eval:: exp \<Rightarrow> int \<Rightarrow> int such that eval e x evaluates e at the value x.
+
+A polynomial can be represented as a list of coefficients, starting with the constant. For example,
+[4,2,-1,3] represents the polynomial 4+2x-x^2+3x^3. Define a function evalp:: int list \<Rightarrow> int 
+\<Rightarrow> int that evaluates a polynomial at the given value. Define a function coeffs:: exp \<Rightarrow> int list
+that transforms an expression into a polynomial. This may require auxiliary functions. Prove that
+coeffs preserves the value of the expression: evalp (coeffs e) x = eval e x.
+
+Hint: consider the hint in exercise 10.\<close>
+
+datatype exp = Var 
+  | Const int 
+  | Add exp exp 
+  | Mult exp exp
+
+fun eval:: "exp \<Rightarrow> int \<Rightarrow> int" where 
+"eval Var x = x"
+| "eval (Const c) x = c"
+| "eval (Add e1 e2) x = (eval e1 x) + (eval e2 x)"
+| "eval (Mult e1 e2) x = (eval e1 x) * (eval e2 x)"
+
+fun evalp:: "int list \<Rightarrow> int \<Rightarrow> int" where
+"evalp Nil x = 0" |
+"evalp (t # ts) x = t + x*(evalp ts x)"
 
 
 
-
-
-
-
-
-
-  
 
 end
