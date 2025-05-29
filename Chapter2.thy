@@ -256,7 +256,50 @@ fun evalp:: "int list \<Rightarrow> int \<Rightarrow> int" where
 "evalp Nil x = 0" |
 "evalp (t # ts) x = t + x*(evalp ts x)"
 
+(* Auxiliary Functions *)
+
+fun polysum:: "int list \<Rightarrow> int list \<Rightarrow> int list" where
+"polysum Nil xs = xs"
+| "polysum xs Nil = xs"
+| "polysum (x # xs) (y # ys) = (x + y) # (polysum xs ys)"
+
+fun polyscalarmult:: "int \<Rightarrow> int list \<Rightarrow> int list" where
+"polyscalarmult k Nil = Nil"|
+"polyscalarmult k (x # xs) = (k*x) # (polyscalarmult k xs)"
+
+fun polymult:: "int list \<Rightarrow> int list \<Rightarrow> int list" where
+"polymult Nil ys = Nil"
+|"polymult (x # xs) ys = polysum (polyscalarmult x ys) (0 # (polymult  xs ys))"
+
+(**)
+
+fun coeffs:: "exp \<Rightarrow> int list" where
+"coeffs Var = [0,1]"
+|"coeffs (Const k) = [k]"
+|"coeffs (Add e1 e2) = polysum (coeffs e1) (coeffs e2)"
+|"coeffs (Mult e1 e2) = polymult (coeffs e1) (coeffs e2)"
 
 
+thm Int.int_distrib
+
+lemma evalp_additive: "evalp (polysum xs ys) a = evalp xs a + evalp ys a"
+  apply (induction rule: polysum.induct)
+    apply (auto simp add: Int.int_distrib)
+  done
+
+lemma evalp_preserve_scalar_mult: "evalp (polyscalarmult k xs) a = k * (evalp xs a)"
+  apply (induction xs)
+   apply (auto simp add: Int.int_distrib)
+  done
+
+lemma evalp_multiplicative: "evalp (polymult xs ys) a = evalp xs a * evalp ys a"
+  apply (induction xs)
+   apply (auto simp add: Int.int_distrib evalp_preserve_scalar_mult evalp_additive)
+  done
+
+theorem evaluation_equal: "evalp (coeffs e) x = eval e x"
+  apply (induction e)
+     apply (auto simp add: evalp_multiplicative evalp_additive)
+  done
 
 end
